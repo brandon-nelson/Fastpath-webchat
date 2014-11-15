@@ -11,7 +11,8 @@
  */
 package org.jivesoftware.webchat.util;
 
-import org.jivesoftware.smackx.FormField;
+
+import org.jivesoftware.smackx.xdata.FormField;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -42,7 +43,7 @@ public class FormUtils {
         }
         else if (formField.getType().equals(FormField.TYPE_LIST_SINGLE)) {
             builder.append("<select name=\"" + formField.getVariable() + "\" >");
-            Iterator iter = formField.getOptions();
+            Iterator iter = formField.getOptions().iterator();
             String cookieValue = ModelUtil.emptyStringIfNull(getCookieValueForField(formField.getVariable(), request));
             while (iter.hasNext()) {
                 FormField.Option option = (FormField.Option)iter.next();
@@ -52,7 +53,7 @@ public class FormUtils {
             builder.append("</select>");
         }
         else if (formField.getType().equals(FormField.TYPE_BOOLEAN)) {
-            Iterator iter = formField.getOptions();
+            Iterator iter = formField.getOptions().iterator();
             int counter = 0;
             while (iter.hasNext()) {
                 FormField.Option option = (FormField.Option)iter.next();
@@ -65,7 +66,7 @@ public class FormUtils {
             }
         }
         else if (formField.getType().equals(FormField.TYPE_LIST_MULTI)) {
-            Iterator iter = formField.getOptions();
+            Iterator iter = formField.getOptions().iterator();
             while (iter.hasNext()) {
                 FormField.Option option = (FormField.Option)iter.next();
                 String value = option.getLabel();
@@ -77,7 +78,7 @@ public class FormUtils {
         }
         else if (formField.getType().equals(FormField.TYPE_HIDDEN)) {
             String name = formField.getVariable();
-            Iterator values = formField.getValues();
+            Iterator values = formField.getValues().iterator();
             String value = "";
             while (values.hasNext()) {
                 value = " value=\"" + StringUtils.escapeHTMLTags((String)values.next()) + "\"";
@@ -107,7 +108,7 @@ public class FormUtils {
     public static String createDynamicField(FormField formField, HttpServletRequest request) {
         if (formField.getType().equals(FormField.TYPE_HIDDEN)) {
             String name = formField.getVariable();
-            Iterator values = formField.getValues();
+            Iterator values = formField.getValues().iterator();
             String value = "";
             while (values.hasNext()) {
                 value = (String)values.next();

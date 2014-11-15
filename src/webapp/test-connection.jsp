@@ -18,6 +18,7 @@
 <%@ page import="java.io.StringWriter" %>
 <%@ page import="java.io.Writer" %>
 <%@ page import="org.jivesoftware.smack.ConnectionConfiguration" %>
+<%@ page import="org.jivesoftware.smack.tcp.XMPPTCPConnection" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
@@ -36,7 +37,7 @@
                 try {
                     ConnectionConfiguration xmppConfig = new ConnectionConfiguration(
                             settings.getServerDomain(), settings.getPort());
-                    con = new XMPPConnection(xmppConfig);
+                    con = new XMPPTCPConnection(xmppConfig);
                     con.connect();
                     con.loginAnonymously();
                     ok = true;

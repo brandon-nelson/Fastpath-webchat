@@ -12,30 +12,27 @@
 
 package org.jivesoftware.webchat;
 
+import org.jivesoftware.smack.*;
+import org.jivesoftware.smack.filter.FromContainsFilter;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smackx.delay.packet.DelayInformation;
 import org.jivesoftware.smackx.workgroup.WorkgroupInvitation;
 import org.jivesoftware.smackx.workgroup.WorkgroupInvitationListener;
 import org.jivesoftware.smackx.workgroup.user.Workgroup;
+import org.jivesoftware.smackx.xevent.MessageEventManager;
+import org.jivesoftware.smackx.xevent.MessageEventNotificationListener;
 import org.jivesoftware.webchat.history.Line;
 import org.jivesoftware.webchat.history.Transcript;
 import org.jivesoftware.webchat.personal.ChatMessage;
 import org.jivesoftware.webchat.util.ModelUtil;
 import org.jivesoftware.webchat.util.WebLog;
-import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.PacketListener;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.AndFilter;
-import org.jivesoftware.smack.filter.FromContainsFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smackx.MessageEventManager;
-import org.jivesoftware.smackx.MessageEventNotificationListener;
 import org.jivesoftware.smackx.muc.MultiUserChat;
-import org.jivesoftware.smackx.packet.DelayInformation;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -127,11 +124,11 @@ public class ChatSession implements MessageEventNotificationListener, PacketList
 
     private boolean connect() throws Exception {
         if (port == -1 || port == 5222) {
-            connection = new XMPPConnection(host);
+            connection = new XMPPTCPConnection(host);
         }
         else {
             ConnectionConfiguration config = new ConnectionConfiguration(host, port);
-            connection = new XMPPConnection(config);
+            connection = new XMPPTCPConnection(config);
         }
 
         connection.connect();
@@ -144,6 +141,14 @@ public class ChatSession implements MessageEventNotificationListener, PacketList
 
         // Add a connection listener.
         connection.addConnectionListener(new ConnectionListener() {
+            public void connected(XMPPConnection connection) {
+
+            }
+
+            public void authenticated(XMPPConnection connection) {
+
+            }
+
             public void connectionClosed() {
                 workgroup = null;
                 groupChat = null;
@@ -255,6 +260,8 @@ public class ChatSession implements MessageEventNotificationListener, PacketList
             }
             catch (XMPPException e) {
                 WebLog.logError("Unable to join chat queue.", e);
+            } catch (SmackException e) {
+                WebLog.logError("Unable to join chat queue.", e);
             }
         }
 
@@ -350,15 +357,21 @@ public class ChatSession implements MessageEventNotificationListener, PacketList
         if (workgroup != null && workgroup.isInQueue()) {
             try {
                 workgroup.departQueue();
-                workgroup = null;
             }
             catch (XMPPException xe) {
                 WebLog.logError("Error closing ChatSession:", xe);
+            } catch (SmackException e) {
+                WebLog.logError("Error closing ChatSession:", e);
             }
+            workgroup = null;
         }
         // If we've already been routed and are in a chat, leave it.
         if (groupChat != null) {
-            groupChat.leave();
+            try {
+                groupChat.leave();
+            } catch (SmackException.NotConnectedException e) {
+                WebLog.logError("Failed to leave group:", e);
+            }
             groupChat = null;
 
             if (messageEventManager != null) {
@@ -368,7 +381,11 @@ public class ChatSession implements MessageEventNotificationListener, PacketList
         }
         // Close the connection to the server.
         if (connection != null) {
-            connection.disconnect();
+            try {
+                connection.disconnect();
+            } catch (SmackException.NotConnectedException e) {
+                WebLog.logError("Tried to disconnect when not connected:", e);
+            }
             connection = null;
         }
     }
@@ -440,12 +457,20 @@ public class ChatSession implements MessageEventNotificationListener, PacketList
         // See if we are the last one in the chat room.
         if (groupChat.getOccupantsCount() == 1) {
             // Leave the room.
-            groupChat.leave();
+            try {
+                groupChat.leave();
+            } catch (SmackException.NotConnectedException e) {
+                WebLog.logError("Failed to leave group chat:",e);
+            }
             groupChat = null;
             // Cancel this listener.
             connection.removePacketListener(this);
             // Close the connection.
-            connection.disconnect();
+            try {
+                connection.disconnect();
+            } catch (SmackException.NotConnectedException e) {
+                WebLog.logError("Tried to disconnect when already disconnected:",e);
+            }
             connection = null;
         }
     }
@@ -563,7 +588,7 @@ public class ChatSession implements MessageEventNotificationListener, PacketList
 
         for (int i = 0; i < 10; i++) {
             if (groupChat != null) {
-                Iterator iter = groupChat.getOccupants();
+                Iterator iter = groupChat.getOccupants().iterator();
                 while (iter.hasNext()) {
                     String occupant = (String)iter.next();
                     String user = StringUtils.parseResource(occupant);

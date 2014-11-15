@@ -12,6 +12,7 @@
 
 package org.jivesoftware.webchat.actions;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smackx.workgroup.settings.WorkgroupProperties;
 import org.jivesoftware.smackx.workgroup.user.Workgroup;
 import org.jivesoftware.webchat.ChatManager;
@@ -192,6 +193,10 @@ public class ChatStarter extends WebBean {
                 properties = wGroup.getWorkgroupProperties();
             }
             catch (XMPPException e) {
+            } catch (SmackException.NotConnectedException e) {
+
+            } catch (SmackException.NoResponseException e) {
+
             }
 
             if (properties != null && properties.isAuthRequired()) {

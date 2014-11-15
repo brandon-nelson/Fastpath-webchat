@@ -1,6 +1,7 @@
 package org.jivesoftware.smackx.workgroup.ext.email;
 
 import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.util.XmlStringBuilder;
 
 public class EmailIQ extends IQ {
     public static final String ELEMENT_NAME = "send-email";
@@ -11,66 +12,69 @@ public class EmailIQ extends IQ {
     private String message;
     private boolean html;
     private String sessionID;
-    
+
     public String getChildElementXML() {
-        StringBuilder localStringBuilder = new StringBuilder();
-        localStringBuilder.append("<").append("send-email").append(" xmlns=\"").append("http://jivesoftware.com/protocol/workgroup").append("\">");
-        localStringBuilder.append("<fromAddress>").append(getFromAddress()).append("</fromAddress>");
-        localStringBuilder.append("<toAddress>").append(getToAddress()).append("</toAddress>");
-        localStringBuilder.append("<subject>").append(getSubject()).append("</subject>");
-        localStringBuilder.append("<message>").append(getMessage()).append("</message>");
-        localStringBuilder.append("<useHTML>").append(Boolean.toString(isHtml())).append("</useHTML>");
-        if (getSessionID() != null)
-            localStringBuilder.append("<sessionID>").append(getSessionID()).append("</sessionID>");
-        localStringBuilder.append("</").append("send-email").append("> ");
-        return localStringBuilder.toString();
+        XmlStringBuilder builder = new XmlStringBuilder();
+        builder.halfOpenElement(ELEMENT_NAME);
+        builder.xmlnsAttribute(NAMESPACE);
+        builder.rightAngelBracket();
+        builder.element("fromAddress", getFromAddress());
+        builder.element("toAddress", getToAddress());
+        builder.element("subject", getSubject());
+        builder.element("message", getMessage());
+        builder.element("useHTML", Boolean.toString(isHtml()));
+        if(getSessionID() != null) {
+            builder.element("sessionID", getSessionID());
+        }
+        builder.closeElement(ELEMENT_NAME);
+        return builder.toString();
     }
-    
+
     public String getFromAddress() {
         return this.fromAddress;
     }
-    
-    public void setFromAddress(String paramString) {
-        this.fromAddress = paramString;
+
+    public void setFromAddress(String fromAddress) {
+        this.fromAddress = fromAddress;
     }
-    
+
     public String getToAddress() {
         return this.toAddress;
     }
-    
-    public void setToAddress(String paramString) {
-        this.toAddress = paramString;
+
+    public void setToAddress(String toAddress) {
+        this.toAddress = toAddress;
     }
-    
+
     public String getSubject() {
         return this.subject;
     }
-    
-    public void setSubject(String paramString) {
-        this.subject = paramString;
+
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
-    
+
     public String getMessage() {
         return this.message;
     }
-    
-    public void setMessage(String paramString) {
-        this.message = paramString;
+
+    public void setMessage(String message) {
+        this.message = message;
     }
-    
+
     public boolean isHtml() {
         return this.html;
     }
-    
-    public void setHtml(boolean paramBoolean) {
-        this.html = paramBoolean;
+
+    public void setHtml(boolean html) {
+        this.html = html;
     }
-    
+
     public String getSessionID() {
         return this.sessionID;
     }
-    
-    public void setSessionID(String paramString) {
-        this.sessionID = paramString;
+
+    public void setSessionID(String sessionID) {
+        this.sessionID = sessionID;
     }
 }

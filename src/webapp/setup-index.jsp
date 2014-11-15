@@ -18,6 +18,8 @@
  <%@ page import="java.util.Iterator" %>
  <%@ page import="org.jivesoftware.smack.ConnectionConfiguration" %>
  <%@ page import="org.jivesoftware.smack.XMPPException" %>
+<%@ page import="org.jivesoftware.smack.tcp.XMPPTCPConnection" %>
+<%@ page import="org.jivesoftware.smack.packet.XMPPError" %>
 
 <%  // Get parameters
     String domain = ParamUtils.getParameter(request,"domain");
@@ -38,13 +40,13 @@
 
         try {
             ConnectionConfiguration xmppConfig = new ConnectionConfiguration(domain, port);
-            XMPPConnection con = new XMPPConnection(xmppConfig);
+            XMPPConnection con = new XMPPTCPConnection(xmppConfig);
             con.connect();
             con.loginAnonymously();
         }
-        catch (XMPPException xe) {
+        catch (XMPPException.XMPPErrorException xe) {
             // If anonymous login disabled.
-            if (xe.getXMPPError().getCode() == 403) {
+            if (xe.getXMPPError().getType() == XMPPError.Type.AUTH) {
                 errors.put("connect", "Anonymous login test failed. Ensure that anonymous logins are enabled on the server.");
             }
             else {
@@ -52,7 +54,7 @@
             }
         }
         catch (Exception ex) {
-            errors.put("connect", "Could not connect to server. Please check that the domain and port are valid.");
+            errors.put("connect", "Could not connect to server. Please check that the domain and port are valid." + ex.toString());
         }
 
         // Continue if there were no errors

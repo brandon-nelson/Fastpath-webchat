@@ -126,7 +126,7 @@
         }
     }
 
-    String sendValue = StringUtils.escapeForXML(buf.toString());
+    String sendValue = StringUtils.escapeForXML(buf.toString()).toString();
 
 %>
 

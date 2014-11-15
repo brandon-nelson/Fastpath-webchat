@@ -10,17 +10,19 @@
  */
 package org.jivesoftware.webchat.personal;
 
+import org.jivesoftware.smack.*;
+import org.jivesoftware.smack.packet.PropertyPacketExtension;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smackx.xevent.MessageEventManager;
+import org.jivesoftware.smackx.xevent.MessageEventNotificationListener;
 import org.jivesoftware.webchat.ChatManager;
 import org.jivesoftware.webchat.util.WebLog;
 import org.jivesoftware.webchat.settings.ConnectionSettings;
-import org.jivesoftware.smack.Chat;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smackx.MessageEventManager;
-import org.jivesoftware.smackx.MessageEventNotificationListener;
 
+import javax.security.sasl.SaslException;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -61,12 +63,18 @@ public class PersonalChat implements MessageEventNotificationListener {
         int port = settings.getPort();
         try {
             ConnectionConfiguration config = new ConnectionConfiguration(host, port);
-            con = new XMPPConnection(config);
+            con = new XMPPTCPConnection(config);
             con.connect();
             con.loginAnonymously();
             chatPoller = new ChatPoller();
         }
         catch (XMPPException e) {
+            WebLog.logError("Error starting chat.", e);
+        } catch (SaslException e) {
+            WebLog.logError("Error starting chat.", e);
+        } catch (SmackException e) {
+            WebLog.logError("Error starting chat.", e);
+        } catch (IOException e) {
             WebLog.logError("Error starting chat.", e);
         }
 
@@ -84,16 +92,17 @@ public class PersonalChat implements MessageEventNotificationListener {
 
         Message newMessage = new Message();
         newMessage.setTo(jid);
-        newMessage.setProperty("nickname", nickname);
-        newMessage.setProperty("anonymous", true);
-        newMessage.setProperty("email", email);
-        newMessage.setProperty("question", question);
+        HashMap<String,Object> messageProperties = new HashMap<String, Object>();
+        messageProperties.put("nickname", nickname);
+        messageProperties.put("anonymous", true);
+        messageProperties.put("email", email);
+        messageProperties.put("question", question);
+        newMessage.addExtension(new PropertyPacketExtension(messageProperties));
         newMessage.setBody( "I would like to chat with you.");
         try {
             chat.sendMessage(newMessage);
-        }
-        catch (XMPPException e) {
-              WebLog.logError("Error starting chat.", e);
+        } catch (SmackException.NotConnectedException e) {
+            WebLog.logError("Error starting chat.", e);
         }
 
         timer = new Timer();
@@ -110,7 +119,11 @@ public class PersonalChat implements MessageEventNotificationListener {
                 if (diff > 30000) {
                     if (con != null) {
                         System.out.println("Closing dwr connect.");
-                        con.disconnect();
+                        try {
+                            con.disconnect();
+                        } catch (SmackException.NotConnectedException e) {
+
+                        }
                     }
                     timer.cancel();
                     this.cancel();
@@ -123,20 +136,26 @@ public class PersonalChat implements MessageEventNotificationListener {
     public void endChat() {
         Message newMessage = new Message();
         newMessage.setTo(jid);
-        newMessage.setProperty("nickname", nickname);
-        newMessage.setProperty("anonymous", true);
-        newMessage.setProperty("email", email);
-        newMessage.setProperty("left", true);
+        HashMap<String,Object> messageProperties = new HashMap<String, Object>();
+        messageProperties.put("nickname", nickname);
+        messageProperties.put("anonymous", true);
+        messageProperties.put("email", email);
+        messageProperties.put("left", true);
+        newMessage.addExtension(new PropertyPacketExtension(messageProperties));
         newMessage.setBody(nickname+ " has left the conversation.");
         try {
             chat.sendMessage(newMessage);
         }
-        catch (XMPPException e) {
+        catch (SmackException.NotConnectedException e) {
             WebLog.logError("Error ending chat.", e);
         }
 
         if (con != null) {
-            con.disconnect();
+            try {
+                con.disconnect();
+            } catch (SmackException.NotConnectedException e1) {
+
+            }
         }
     }
 
@@ -156,20 +175,26 @@ public class PersonalChat implements MessageEventNotificationListener {
     public void sendMessage(String message) {
         Message newMessage = new Message();
         newMessage.setTo(jid);
-        newMessage.setProperty("nickname", nickname);
-        newMessage.setProperty("anonymous", true);
-        newMessage.setProperty("email", email);
+        HashMap<String,Object> messageProperties = new HashMap<String, Object>();
+        messageProperties.put("nickname", nickname);
+        messageProperties.put("anonymous", true);
+        messageProperties.put("email", email);
+        newMessage.addExtension(new PropertyPacketExtension(messageProperties));
         newMessage.setBody(message);
         try {
             chat.sendMessage(newMessage);
         }
-        catch (XMPPException e) {
+        catch (SmackException.NotConnectedException e) {
             WebLog.logError("Error sending message.", e);
         }
     }
 
     public void customerIsTyping() {
-        messageEventManager.sendComposingNotification(jid, "l0k1");
+        try {
+            messageEventManager.sendComposingNotification(jid, "l0k1");
+        } catch (SmackException.NotConnectedException e) {
+
+        }
     }
 
     public boolean isAgentTyping() {

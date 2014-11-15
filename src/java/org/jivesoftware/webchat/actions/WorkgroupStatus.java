@@ -12,28 +12,21 @@
 
 package org.jivesoftware.webchat.actions;
 
+import org.jivesoftware.smack.*;
+import org.jivesoftware.smack.packet.*;
+import org.jivesoftware.smackx.disco.ServiceDiscoveryManager;
+import org.jivesoftware.smackx.disco.packet.DiscoverItems;
 import org.jivesoftware.smackx.workgroup.user.Workgroup;
+import org.jivesoftware.smackx.xdata.Form;
 import org.jivesoftware.webchat.ChatManager;
 import org.jivesoftware.webchat.settings.ConnectionSettings;
 import org.jivesoftware.webchat.util.ModelUtil;
 import org.jivesoftware.webchat.util.WebLog;
-import org.jivesoftware.smack.PacketCollector;
-import org.jivesoftware.smack.PacketListener;
-import org.jivesoftware.smack.SmackConfiguration;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.FromContainsFilter;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
-import org.jivesoftware.smack.packet.DefaultPacketExtension;
-import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smackx.Form;
-import org.jivesoftware.smackx.ServiceDiscoveryManager;
-import org.jivesoftware.smackx.packet.DiscoverItems;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -168,7 +161,12 @@ public final class WorkgroupStatus {
         Presence presence = workgroupPresence.get(workgroupName);
         if (presence == null) {
             Workgroup workgroup  = getWorkgroup(workgroupName);
-            boolean isAvailable = workgroup.isAvailable();
+            boolean isAvailable = false;
+            try {
+                isAvailable = workgroup.isAvailable();
+            } catch (Exception e) {
+                WebLog.logError("Could not determine if workgroup is available:", e);
+            }
             presence = new Presence(isAvailable ? Presence.Type.available : Presence.Type.unavailable);
             workgroupPresence.put(workgroupName, presence);
 
@@ -202,16 +200,22 @@ public final class WorkgroupStatus {
         XMPPConnection globalConnection = chatManager.getGlobalConnection();
 
         Presence directedPresence = new Presence(Presence.Type.available);
-        directedPresence.setProperty("anonymous", true);
+        HashMap<String,Object> propertiesMap = new HashMap<String, Object>();
+        propertiesMap.put("anonymous",true);
+        directedPresence.addExtension(new PropertyPacketExtension(propertiesMap));
         directedPresence.setTo(agentJID);
         PacketFilter typeFilter = new PacketTypeFilter(Presence.class);
         PacketFilter fromFilter = new FromContainsFilter(agentJID);
         PacketCollector collector = globalConnection.createPacketCollector(new AndFilter(fromFilter,
                 typeFilter));
 
-        globalConnection.sendPacket(directedPresence);
+        try {
+            globalConnection.sendPacket(directedPresence);
+        } catch (SmackException.NotConnectedException e) {
 
-        Presence response = (Presence)collector.nextResult(SmackConfiguration.getPacketReplyTimeout());
+        }
+
+        Presence response = (Presence)collector.nextResult(SmackConfiguration.getDefaultPacketReplyTimeout());
 
         // Cancel the collector.
         collector.cancel();
@@ -255,8 +259,12 @@ public final class WorkgroupStatus {
         }
         catch (XMPPException e) {
             return workgroupNames;
+        } catch (SmackException.NotConnectedException e) {
+            return workgroupNames;
+        } catch (SmackException.NoResponseException e) {
+            return workgroupNames;
         }
-        Iterator iter = result.getItems();
+        Iterator iter = result.getItems().iterator();
         while (iter.hasNext()) {
             DiscoverItems.Item item = (DiscoverItems.Item)iter.next();
             String workgroupName = item.getName();
@@ -282,6 +290,10 @@ public final class WorkgroupStatus {
                 workgroupForms.put(workgroupName, form);
             }
             catch (XMPPException e) {
+                e.printStackTrace();
+            } catch (SmackException.NotConnectedException e) {
+                e.printStackTrace();
+            } catch (SmackException.NoResponseException e) {
                 e.printStackTrace();
             }
         }

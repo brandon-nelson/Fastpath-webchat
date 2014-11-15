@@ -12,15 +12,13 @@
 
 package org.jivesoftware.webchat;
 
-import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.webchat.actions.WorkgroupStatus;
 import org.jivesoftware.webchat.settings.ChatSettingsManager;
 import org.jivesoftware.webchat.settings.ConnectionSettings;
-import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.webchat.util.WebLog;
 
 import java.util.ArrayList;
@@ -66,7 +64,7 @@ public final class ChatManager {
     private static final long INACTIVE_TIME_WARNING_IN_MS = 10 * 1000;
 
     private static final ChatManager singleton = new ChatManager();
-    
+
 
     /**
      * Returns the singleton instance of <CODE>ChatManager</CODE>,
@@ -139,6 +137,8 @@ public final class ChatManager {
                                 chatSession.setInactivityWarningSent(true);
                             } catch (XMPPException e) {
                                 WebLog.logError("Error sending message:", e);
+                            } catch (SmackException.NotConnectedException e) {
+                                WebLog.logError("Error sending message: ", e);
                             }
                         }
                     }
@@ -295,11 +295,11 @@ public final class ChatManager {
         try {
 
             if (port == -1) {
-                xmppConn = new XMPPConnection(host);
+                xmppConn = new XMPPTCPConnection(host);
             }
             else {
                 ConnectionConfiguration config = new ConnectionConfiguration(host, port);
-                xmppConn = new XMPPConnection(config);
+                xmppConn = new XMPPTCPConnection(config);
             }
             xmppConn.connect();
 
@@ -311,6 +311,10 @@ public final class ChatManager {
 
             // Add a connection listener.
             xmppConn.addConnectionListener(new ConnectionListener() {
+                public void connected(XMPPConnection connection) {}
+
+                public void authenticated(XMPPConnection connection) {}
+
                 public void connectionClosed() {
                     context.log("Main Connection closed for some reason");
                 }

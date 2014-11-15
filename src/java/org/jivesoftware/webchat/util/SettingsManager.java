@@ -12,6 +12,7 @@
 
 package org.jivesoftware.webchat.util;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smackx.workgroup.settings.ChatSetting;
 import org.jivesoftware.smackx.workgroup.settings.ChatSettings;
 import org.jivesoftware.smackx.workgroup.user.Workgroup;
@@ -109,6 +110,8 @@ public class SettingsManager implements WorkgroupChangeListener {
                 chatSettings.put(workgroupName, settings);
             }
             catch (XMPPException e) {
+                WebLog.logError("Error retrieving chat setting using key=" + key + " and workgroup=" + workgroupName, e);
+            } catch (SmackException e) {
                 WebLog.logError("Error retrieving chat setting using key=" + key + " and workgroup=" + workgroupName, e);
             }
         }

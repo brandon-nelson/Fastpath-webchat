@@ -10,6 +10,7 @@
  */
 package org.jivesoftware.webchat.personal;
 
+import org.jivesoftware.smack.packet.PropertyPacketExtension;
 import org.jivesoftware.webchat.util.FormText;
 import org.jivesoftware.webchat.util.ModelUtil;
 import org.jivesoftware.webchat.util.WebUtils;
@@ -45,14 +46,20 @@ public class ChatMessage {
         }
         else if (packet instanceof Message) {
             Message message = (Message)packet;
-            if (message.getProperty("PUSH_URL") != null) {
-                urlToPush = (String)message.getProperty("PUSH_URL");
+            PropertyPacketExtension messageProperties = message.getExtension("properties", "http://www.jivesoftware.com/xmlns/xmpp/properties");
+            if(messageProperties == null) {
+                String from = StringUtils.parseResource(message.getFrom());
+                setFrom(from);
+                setBody("");
+            }
+            else if (messageProperties.getProperties().get("PUSH_URL") != null) {
+                urlToPush = (String)messageProperties.getProperties().get("PUSH_URL");
                 urlToPush = WebUtils.getPushedURL(urlToPush);
             }
-            else if (message.getProperty("transfer") != null) {
+            else if (messageProperties.getProperties().get("transfer") != null) {
                 from = "";
-                boolean transfer = ((Boolean)message.getProperty("transfer")).booleanValue();
-                String workgroup = (String)message.getProperty("workgroup");
+                boolean transfer = ((Boolean)messageProperties.getProperties().get("transfer")).booleanValue();
+                String workgroup = (String)messageProperties.getProperties().get("workgroup");
                 if (transfer) {
                     body = FormText.getTransferToAgentText(workgroup);
                 }

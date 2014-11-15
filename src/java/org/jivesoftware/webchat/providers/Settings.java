@@ -12,10 +12,11 @@
 
 package org.jivesoftware.webchat.providers;
 
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smackx.iqprivate.PrivateDataManager;
 import org.jivesoftware.webchat.util.WebLog;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smackx.PrivateDataManager;
 
 import java.util.Map;
 
@@ -58,7 +59,7 @@ public class Settings {
     public static Map getSettings(XMPPConnection con, String workgroup, String setting) {
 
         try {
-            PrivateDataManager personalPDM = new PrivateDataManager(con, workgroup);
+            PrivateDataManager personalPDM = PrivateDataManager.getInstanceFor(con);
 
             String namespace = "workgroup:" + workgroup + ":settings:" + setting;
             String elementName = "workgroup_settings";
@@ -69,6 +70,10 @@ public class Settings {
             return map;
         }
         catch (XMPPException e) {
+            WebLog.logError("Could not load private data:", e);
+        } catch (SmackException.NotConnectedException e) {
+            WebLog.logError("Could not load private data:", e);
+        } catch (SmackException.NoResponseException e) {
             WebLog.logError("Could not load private data:", e);
         }
         return null;

@@ -10,6 +10,7 @@
  */
 package org.jivesoftware.webchat.personal;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.webchat.util.ModelUtil;
 import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.PacketListener;
@@ -53,7 +54,11 @@ public class ChatPoller {
                     String body = message.getBody();
 
                     if(body.equals("/kill")){
-                        con.disconnect();
+                        try {
+                            con.disconnect();
+                        } catch (SmackException.NotConnectedException e) {
+
+                        }
                         return;
                     }
                     chatMessage.setFrom(from);

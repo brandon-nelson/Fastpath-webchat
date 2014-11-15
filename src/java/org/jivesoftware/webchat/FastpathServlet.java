@@ -10,6 +10,7 @@
 
 package org.jivesoftware.webchat;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.webchat.actions.WorkgroupStatus;
 import org.jivesoftware.webchat.settings.ChatSettingsManager;
 import org.jivesoftware.webchat.util.ModelUtil;
@@ -131,7 +132,11 @@ public class FastpathServlet extends HttpServlet {
 
         if (chatManager.isConnected()) {
             // Close XMPPConnection
-            chatManager.getGlobalConnection().disconnect();
+            try {
+                chatManager.getGlobalConnection().disconnect();
+            } catch (SmackException.NotConnectedException e) {
+
+            }
         }
 
         super.destroy();
@@ -228,6 +233,12 @@ public class FastpathServlet extends HttpServlet {
                         roster.createEntry(requestAgent, requestAgent, null);
                     }
                     catch (XMPPException e) {
+                        WebLog.logError("Error checking roster", e);
+                    } catch (SmackException.NotLoggedInException e) {
+                        WebLog.logError("Error checking roster", e);
+                    } catch (SmackException.NotConnectedException e) {
+                        WebLog.logError("Error checking roster", e);
+                    } catch (SmackException.NoResponseException e) {
                         WebLog.logError("Error checking roster", e);
                     }
                 }

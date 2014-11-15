@@ -1,5 +1,6 @@
 package org.jivesoftware.webchat;
 
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smackx.workgroup.MetaData;
 import org.jivesoftware.smackx.workgroup.agent.AgentSession;
 import org.jivesoftware.smackx.workgroup.agent.Offer;
@@ -11,8 +12,11 @@ import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.muc.InvitationListener;
 import org.jivesoftware.smackx.muc.MultiUserChat;
+
+import javax.security.sasl.SaslException;
 import javax.swing.JFrame;
 
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -91,7 +95,7 @@ public class LoadTest {
 
     private void connectAsAgent() {
         try {
-            final XMPPConnection con = new XMPPConnection(SERVER);
+            final XMPPConnection con = new XMPPTCPConnection(SERVER);
             con.login("jive", "user", "demo");
 
             // Notify workgroup that the agent is here
@@ -101,6 +105,16 @@ public class LoadTest {
 
 
             con.addConnectionListener(new ConnectionListener() {
+                @Override
+                public void connected(XMPPConnection connection) {
+
+                }
+
+                @Override
+                public void authenticated(XMPPConnection connection) {
+
+                }
+
                 public void connectionClosed() {
                     System.out.println("Connection is closed");
                 }
@@ -123,7 +137,11 @@ public class LoadTest {
             // Add Offer Listener
             agentSession.addOfferListener(new OfferListener() {
                 public void offerReceived(Offer offer) {
-                    offer.accept();
+                    try {
+                        offer.accept();
+                    } catch (SmackException.NotConnectedException e) {
+                        e.printStackTrace();
+                    }
                     System.out.println("offer accepted " + offer.getSessionID());
                 }
 
@@ -152,14 +170,20 @@ public class LoadTest {
                     });
                 }
 
-                @Override
-                public void invitationReceived(Connection conn, String room, String inviter, String reason, String password, Message message) {
-                    throw new UnsupportedOperationException();
-                }
             });
 
         }
         catch (XMPPException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (SaslException e) {
+            e.printStackTrace();
+        } catch (SmackException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

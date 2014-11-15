@@ -11,13 +11,13 @@
 --%>
 
 <%@ page  import = "org.jivesoftware.webchat.ChatManager,
-                    org.jivesoftware.smackx.workgroup.user.Workgroup,
-                    org.jivesoftware.smackx.Form,
-                    org.jivesoftware.smackx.FormField"
+                    org.jivesoftware.smackx.workgroup.user.Workgroup"
                     errorPage="fatal.jsp"%>
 <%@ page import="java.util.*"%>
 <%@ page import="org.jivesoftware.webchat.actions.WorkgroupStatus" %>
 <%@ page import="org.jivesoftware.webchat.util.*" %>
+<%@ page import="org.jivesoftware.smackx.xdata.Form" %>
+<%@ page import="org.jivesoftware.smackx.xdata.FormField" %>
 <!-- Get and Set Workgroup -->
 <jsp:useBean class="org.jivesoftware.webchat.ChatUser" id="chatUser" />
 <jsp:setProperty name="chatUser" property="*" />
@@ -107,7 +107,7 @@
     <script>
         function ValidateForm() {
         <%
-               Iterator iter = workgroupForm.getFields();
+               Iterator iter = workgroupForm.getFields().iterator();
                while(iter.hasNext()){
                    FormField field = (FormField)iter.next();
                    boolean required = field.isRequired();
@@ -270,7 +270,7 @@
             <% } %>
 
             <%
-                       Iterator fields = workgroupForm.getFields();
+                       Iterator fields = workgroupForm.getFields().iterator();
                        while(fields.hasNext()){
                            hasElements = true;
                            FormField field = (FormField)fields.next();
@@ -288,7 +288,7 @@
               <td height="1%">
               <!-- All workgroup defined variables -->
                 <%
-                       fields = workgroupForm.getFields();
+                       fields = workgroupForm.getFields().iterator();
                        while(fields.hasNext()){
                            FormField field = (FormField)fields.next();
                            if(field.getType().equals(FormField.TYPE_HIDDEN)){

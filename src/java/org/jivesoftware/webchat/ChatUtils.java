@@ -11,7 +11,9 @@
  */
 package org.jivesoftware.webchat;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smackx.workgroup.user.Workgroup;
+import org.jivesoftware.smackx.xevent.MessageEventManager;
 import org.jivesoftware.webchat.actions.ChatQueue;
 import org.jivesoftware.webchat.personal.ChatMessage;
 import org.jivesoftware.webchat.util.FormText;
@@ -20,7 +22,6 @@ import org.jivesoftware.webchat.util.WebUtils;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smackx.MessageEventManager;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import java.util.Iterator;
@@ -101,6 +102,8 @@ public class ChatUtils {
             }
             catch (XMPPException e) {
                 WebLog.logError("Error sending message:", e);
+            } catch (SmackException.NotConnectedException e) {
+                WebLog.logError("Error sending message:", e);
             }
         }
     }
@@ -140,14 +143,18 @@ public class ChatUtils {
 
 
         final MultiUserChat chat = chatSession.getGroupChat();
-        final Iterator iter = chat.getOccupants();
+        final Iterator iter = chat.getOccupants().iterator();
         while (iter.hasNext()) {
             String from = (String)iter.next();
             String tFrom = StringUtils.parseResource(from);
             String nickname = chat.getNickname();
             if (tFrom != null && !tFrom.equals(nickname)) {
                 MessageEventManager messageEventManager = chatSession.getMessageEventManager();
-                messageEventManager.sendComposingNotification(from, "l0k1");
+                try {
+                    messageEventManager.sendComposingNotification(from, "l0k1");
+                } catch (SmackException.NotConnectedException e) {
+                    WebLog.logError("Tried to send notification when not connected:",e);
+                }
             }
         }
     }
@@ -192,9 +199,17 @@ public class ChatUtils {
             return queue;
         }
 
-        if (!chatSession.getWorkgroup().isAvailable()) {
-            queue.setConnectionDropped(true);
-            chatSession.close();
+        try {
+            if (!chatSession.getWorkgroup().isAvailable()) {
+                queue.setConnectionDropped(true);
+                chatSession.close();
+            }
+        } catch (SmackException.NoResponseException e) {
+            WebLog.logError("",e);
+        } catch (XMPPException.XMPPErrorException e) {
+            WebLog.logError("", e);
+        } catch (SmackException.NotConnectedException e) {
+            WebLog.logError("", e);
         }
 
         return queue;

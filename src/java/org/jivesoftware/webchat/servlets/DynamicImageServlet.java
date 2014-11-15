@@ -12,6 +12,7 @@
 
 package org.jivesoftware.webchat.servlets;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.webchat.ChatManager;
 import org.jivesoftware.webchat.actions.WorkgroupStatus;
 import org.jivesoftware.webchat.util.SettingsManager;
@@ -75,7 +76,13 @@ public class DynamicImageServlet extends HttpServlet {
                     roster.createEntry(requestAgent, requestAgent, null);
                 }
                 catch (XMPPException e) {
-                   WebLog.logError("Error creating new roster entry:", e);
+                    WebLog.logError("Error creating new roster entry:", e);
+                } catch (SmackException.NotLoggedInException e) {
+                    WebLog.logError("Error creating new roster entry:", e);
+                } catch (SmackException.NotConnectedException e) {
+                    WebLog.logError("Error creating new roster entry:", e);
+                } catch (SmackException.NoResponseException e) {
+                    WebLog.logError("Error creating new roster entry:", e);
                 }
             }
         }

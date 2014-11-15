@@ -1,5 +1,6 @@
 package org.jivesoftware.webchat.sounds;
 
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smackx.workgroup.user.Workgroup;
 import org.jivesoftware.smackx.workgroup.settings.SoundSettings;
 import org.jivesoftware.webchat.ChatManager;
@@ -39,6 +40,10 @@ public class SoundServlet extends HttpServlet {
                 }
             }
         } catch (XMPPException e) {
+            WebLog.log("Could not load sound settings for workgroup " + workgroupName);
+        } catch (SmackException.NotConnectedException e) {
+            WebLog.log("Could not load sound settings for workgroup " + workgroupName);
+        } catch (SmackException.NoResponseException e) {
             WebLog.log("Could not load sound settings for workgroup " + workgroupName);
         }
     }

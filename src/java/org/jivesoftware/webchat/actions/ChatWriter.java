@@ -12,13 +12,14 @@
 
 package org.jivesoftware.webchat.actions;
 
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smackx.xevent.MessageEventManager;
 import org.jivesoftware.webchat.ChatSession;
 import org.jivesoftware.webchat.util.WebLog;
 import org.jivesoftware.webchat.util.WebUtils;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.util.StringUtils;
-import org.jivesoftware.smackx.MessageEventManager;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import java.util.Iterator;
@@ -76,6 +77,8 @@ public final class ChatWriter {
             }
             catch (XMPPException e) {
                 WebLog.logError("Error sending message:", e);
+            } catch (SmackException.NotConnectedException e) {
+                WebLog.logError("Error sending message:", e);
             }
         }
     }
@@ -85,14 +88,18 @@ public final class ChatWriter {
      */
     public void customerIsTyping() {
         final MultiUserChat chat = chatSession.getGroupChat();
-        final Iterator iter = chat.getOccupants();
+        final Iterator iter = chat.getOccupants().iterator();
         while (iter.hasNext()) {
             String from = (String) iter.next();
             String tFrom = StringUtils.parseResource(from);
             String nickname = chat.getNickname();
             if (tFrom != null && !tFrom.equals(nickname)) {
                 MessageEventManager messageEventManager = chatSession.getMessageEventManager();
-                messageEventManager.sendComposingNotification(from, "l0k1");
+                try {
+                    messageEventManager.sendComposingNotification(from, "l0k1");
+                } catch (SmackException.NotConnectedException e) {
+
+                }
             }
         }
     }

@@ -8,51 +8,51 @@ import org.jivesoftware.smackx.workgroup.ext.email.EmailIQ;
 
 public class WorkgroupExt extends Workgroup {
 
-    private Connection connection;
+    private XMPPConnection connection;
 
     /**
      * @param workgroupJID
      * @param connection
      */
-    public WorkgroupExt(String workgroupJID, Connection connection) {
+    public WorkgroupExt(String workgroupJID, XMPPConnection connection) {
         super(workgroupJID, connection);
         this.connection = connection;
     }
     
-    public boolean sendMail(String paramString1, String paramString2, String paramString3, String paramString4, boolean paramBoolean) throws XMPPException {
+    public boolean sendMail(String to, String from, String subject, String message, boolean useHTML) throws XMPPException,SmackException {
         EmailIQ localEmailIQ = new EmailIQ();
-        localEmailIQ.setToAddress(paramString1);
-        localEmailIQ.setFromAddress(paramString2);
-        localEmailIQ.setSubject(paramString3);
-        localEmailIQ.setMessage(paramString4);
-        localEmailIQ.setHtml(paramBoolean);
+        localEmailIQ.setToAddress(to);
+        localEmailIQ.setFromAddress(from);
+        localEmailIQ.setSubject(subject);
+        localEmailIQ.setMessage(message);
+        localEmailIQ.setHtml(useHTML);
         localEmailIQ.setType(IQ.Type.SET);
         localEmailIQ.setTo(getWorkgroupJID());
         PacketCollector localPacketCollector = connection.createPacketCollector(new PacketIDFilter(localEmailIQ.getPacketID()));
-        connection.sendPacket(localEmailIQ);
-        Packet localPacket = localPacketCollector.nextResult(SmackConfiguration.getPacketReplyTimeout());
+        this.connection.sendPacket(localEmailIQ);
+        Packet localPacket = localPacketCollector.nextResult(SmackConfiguration.getDefaultPacketReplyTimeout());
         localPacketCollector.cancel();
         if (localPacket == null)
-            throw new XMPPException("No response from server.");
+            throw new SmackException.NoResponseException();
         if (localPacket.getError() != null)
-            throw new XMPPException(localPacket.getError());
+            throw new XMPPException.XMPPErrorException(localPacket.getError());
         return true;
     }
     
-    public boolean sendTranscript(String paramString1, String paramString2) throws XMPPException {
+    public boolean sendTranscript(String to, String from) throws XMPPException,SmackException {
         EmailIQ localEmailIQ = new EmailIQ();
-        localEmailIQ.setToAddress(paramString1);
-        localEmailIQ.setSessionID(paramString2);
+        localEmailIQ.setToAddress(to);
+        localEmailIQ.setSessionID(from);
         localEmailIQ.setType(IQ.Type.SET);
         localEmailIQ.setTo(getWorkgroupJID());
         PacketCollector localPacketCollector = this.connection.createPacketCollector(new PacketIDFilter(localEmailIQ.getPacketID()));
         this.connection.sendPacket(localEmailIQ);
-        Packet localPacket = localPacketCollector.nextResult(SmackConfiguration.getPacketReplyTimeout());
+        Packet localPacket = localPacketCollector.nextResult(SmackConfiguration.getDefaultPacketReplyTimeout());
         localPacketCollector.cancel();
         if (localPacket == null)
-            throw new XMPPException("No response from server.");
+            throw new SmackException.NoResponseException();
         if (localPacket.getError() != null)
-            throw new XMPPException(localPacket.getError());
+            throw new XMPPException.XMPPErrorException(localPacket.getError());
         return true;
     }
     
